@@ -23,7 +23,7 @@ Your design must comply with standard parameters for this type of heat exchanger
 
 
 
-steam = pm.get('mp.H2O')z
+steam = pm.get('mp.H2O')
 
 steam_state_in = steam.state(x=1, p=1.01325)
 steam_state_out = steam.state(x=0, p=1.01325)
