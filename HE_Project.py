@@ -70,7 +70,7 @@ for array in combinations:
     NTU[count] = UA[count]/c_p_water
     effec[count] = 1-np.exp(-NTU[count])
     m_dot_w[count] = Q_required/(effec[count]*c_p_water*(T_h_in - T_c_in))
-    v_water[count] = n_passess
+    v_water[count] = n_passes
     T_c_out = T_c_in+Q_required/(m_dot_w[count]*c_p_water)
     count+=1
 
