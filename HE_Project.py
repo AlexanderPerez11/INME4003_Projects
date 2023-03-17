@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pyromat as pm
@@ -35,4 +37,44 @@ T_c_in = 40 + 273.15 # temperature of cooling water at the inlet [K]
 m_dot_s = 3900*(1/3600)  # mass flow rate of steam [kg/s]
 
 Q_required = m_dot_s*(h_steam_in-h_steam_out) # Heat needed to condense the steam [W]
-print(Q_required)
+# print(f'Q_required = {round(Q_required,3)} W')
+# print(steam_state_in)
+# print(steam_state_out)
+
+n_passes = np.linspace(1,10,10)
+n_tubes = np.linspace(1,100,100)
+d_o_tubes = np.array([15.88,19.05,25.4,32,39])
+l_tube = np.array([2.4384,3.6576,4.572,6.096])
+U_overall = np.linspace(1100,5600,45)
+
+c_p_water = 4180 # water specific heat [J/kg-K]
+n_sols = len(n_passes)* len(n_tubes)* len(d_o_tubes)* len(l_tube) * len(U_overall)
+# A_s = np.zeros((n_sols,1))
+# print(len(U_overall))
+# print(A_s.shape)
+# print((n_passes))
+# print(A_s)
+combinations = list(itertools.product(n_passes,n_tubes,d_o_tubes,l_tube,U_overall))
+UA = np.zeros((len(combinations)))
+NTU = np.zeros((len(combinations)))
+effec = np.zeros((len(combinations)))
+m_dot_w = np.zeros((len(combinations)))
+v_water = np.zeros((len(combinations)))
+T_c_out = np.zeros((len(combinations)))
+print(UA.size)
+print(len(combinations))
+print(len(combinations[0]))
+count = 0
+for array in combinations:
+    UA[count] = array[0]*array[1]*array[2]*array[3]*array[4]
+    NTU[count] = UA[count]/c_p_water
+    effec[count] = 1-np.exp(-NTU[count])
+    m_dot_w[count] = Q_required/(effec[count]*c_p_water*(T_h_in - T_c_in))
+    v_water[count] =
+    T_c_out = T_c_in+Q_required/(m_dot_w[count]*c_p_water)
+    count+=1
+
+
+variables_dict = {"UA":UA, "NTU":NTU, "effec":effec,"m_dot_water":m_dot_w,"T_c_out":T_c_out}
+print("Done!")
+
