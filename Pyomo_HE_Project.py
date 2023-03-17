@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import pyromat as pm
+from pyomo.environ import *
 
 """
 A shell and tube heat exchanger is to be designed to condense 3900 kg/hr of steam at 1 atm. The
@@ -76,3 +77,6 @@ variables_dict = {"UA":UA, "NTU":NTU, "effec":effec,"m_dot_water":m_dot_w,"T_c_o
 print(variables_dict["effec"])
 print("Done!")
 
+model = ConcreteModel()
+
+model.Q = Var(bounds=())
