@@ -24,7 +24,7 @@ Your design must comply with standard parameters for this type of heat exchanger
 """
 
 
-def h_o_calculator(V, D, S_t, S_l, N,D_e, aligned):
+def h_o_calculator(V, D, S_t, S_l, N, D_e, aligned):
     if aligned:
         V_max = V * S_t / (S_t - D)
         if N < 20:
@@ -35,7 +35,6 @@ def h_o_calculator(V, D, S_t, S_l, N,D_e, aligned):
 
         else:
             C_2 = 1
-            print("Hi")
         Re = (V_max * rho_h * D) / mu_h
         if 10 < Re <= 100:
             C = 0.8
@@ -68,7 +67,6 @@ def h_o_calculator(V, D, S_t, S_l, N,D_e, aligned):
             C_2 = N_L[int(N) - 1]
         else:
             C_2 = 1
-            # print("hi")
 
         if 10 < Re <= 100:
             C = 0.90
@@ -149,7 +147,7 @@ h_fg_steam = Steam_out.enthalpy - Steam_in.enthalpy  # Vaporization Enthalpy of 
 T_c_in = 40  # temperature of cooling water at the inlet [C]
 T_c_out = 60  # temperature of cooling water at the outlet [C]
 
-m_dot_h = 3900 / 3600 # mass flow rate of steam [kg/s]
+m_dot_h = 3900 / 3600  # mass flow rate of steam [kg/s]
 Q_req = m_dot_h * (h_fg_steam)  # Heat needed to condense the steam [W]
 
 ########################################################################################################################
@@ -163,12 +161,6 @@ rho_c = Cooling_Water.density  # Density cooling water [kg/m^3]
 k_c = Cooling_Water.conductivity  # Conductivity of cooling water [W/m-k]
 mu_c = Cooling_Water.dynamic_viscosity  # Dynamic viscosity of cooling water [kg/m-s]
 Pr_c = Cooling_Water.prandtl  # Prandlt number of cooling water
-
-print(f'Cooling Water Specific Heat: C_p = {round(C_p_c, 2)} [J/kg-K]')
-print(f'Cooling Water Density: rho = {round(rho_c, 2)} [kg/m^3]')
-print(f'Cooling Water Conductivity: k = {round(k_c, 2)} [W/m-k]')
-print(f'Cooling Water viscosity: mu = {round(mu_c, 5)} [kg/m-s]')
-print(f'Cooling Water Prandlt-#: Pr = {round(Pr_c, 2)}')
 
 ########################################################################################################################
 # Fluid Properties for Convection Coefficient Calculation
@@ -189,26 +181,30 @@ Pr_s = Steam_surface_temp.prandtl
 ########################################################################################################################
 # Calculate water mass flow rate
 m_dot_c = Q_req / (C_p_c * (T_c_out - T_c_in))  # mass flow rate of cooling water [kg/s]
-k_steel = 401  # Conductivity of copper [W/m-k]
 dT_lm = (T_h - T_c_in - (T_h - T_c_out)) / np.log((T_h - T_c_in) / (T_h - T_c_out))  # Log Mean Temperature [C]
 
 ########################################################################################################################
 """
 Dtermine Required Surface Area estimated with outside tube diameter
 """
-U_o_guess = 1100 # Assumed Overall HT Coefficient [W/m^2-k]
+U_o_guess = 1100  # Assumed Overall HT Coefficient [W/m^2-k]
 A_required = Q_req / (U_o_guess * dT_lm)
 
 n_passes = np.array([1, 2, 4, 6, 8])  # Array of allowable tube passes
 material_k = np.array([237, 401, 25, 92, 60.5])
-material_index = ["Aluminum", "Copper", "Stainless Steel", "Nickel", "Carbon Steel"]
+material_name = ["Aluminum", "Copper", "Stainless Steel", "Nickel", "Carbon Steel"]
+material_dict = {"Material": material_name, "Conductivity": material_k}
+material_index = [i for i in range(len(material_name))]
 tube_size = {"d_o_tubes": [1 * 0.0254, 1.25 * 0.0254, 1.5 * 0.0254, 1.75 * 0.0254],
              "d_i_tubes": [0.8 * 0.0254, 1.05 * 0.0254, 1.3 * 0.0254, 1.55 * 0.0254]}  # Allowable tube sizes [m]
 tube_index = [i for i in range(len(tube_size["d_o_tubes"]))]
 l_tube = np.linspace(2, 6, 10)
-tube_type_combs = list(itertools.product(n_passes, material_k, tube_index, l_tube))
+tube_type_combs = list(itertools.product(n_passes, material_index, tube_index, l_tube))
 
 U = np.zeros((len(tube_type_combs)))
+A = np.zeros((len(tube_type_combs)))
+e = np.zeros((len(tube_type_combs)))
+Pitch = np.zeros((len(tube_type_combs)))
 N_tubes = np.zeros((len(tube_type_combs)))
 V_tubes = np.zeros((len(tube_type_combs)))
 V_shell = np.zeros((len(tube_type_combs)))
@@ -223,11 +219,11 @@ for array in tube_type_combs:
     d_o = tube_size["d_o_tubes"][array[2]]
     d_i = tube_size["d_i_tubes"][array[2]]
     P_t = 1.25 * d_o
-    k_material = array[1]
+    k_material = material_dict["Conductivity"][array[1]]
 
     L_t = array[3]
     # Estimate Number of Tubes
-    N_tubes[count] = int(A_required / (d_o * L_t *np.pi))
+    N_tubes[count] = int(A_required / (d_o * L_t * np.pi))
 
     # Tube Side Velocity
     V_tubes[count] = m_dot_c / ((N_tubes[count] / N_passes) * (rho_c * 0.25 * np.pi * d_i ** 2))
@@ -248,7 +244,7 @@ for array in tube_type_combs:
     d_e = 1.10 * (P_t ** 2 - 0.917 * d_o ** 2)
     N_r = int(2 * N_tubes[count] / 3)
 
-    h_o = h_o_calculator(V_shell[count], d_o, P_t, P_t, N_r,d_e, False)
+    h_o = h_o_calculator(V_shell[count], d_o, P_t, P_t, N_r, d_e, False)
 
     conv_i[count] = h_i
     conv_o[count] = h_o
@@ -257,6 +253,10 @@ for array in tube_type_combs:
     RwAo = d_o * np.log(d_o / d_i) / (2 * k_material)
 
     U[count] = (RiAo + RoAo + RwAo) ** (-1)
+    A[count] = d_o * np.pi * L_t * N_tubes[count]
+    NTU = (U[count] * A[count])/ C_p_c
+    e[count] = 1 - np.exp(-NTU)
+    Pitch[count] = P_t
     count += 1
 
 data_U = pd.DataFrame(data=U, columns=["U"])
@@ -267,13 +267,17 @@ data_V_shell = pd.DataFrame(data=V_shell, columns=["V_shell"])
 data_conv_o = pd.DataFrame(data=conv_o, columns=["h_o"])
 data_conv_i = pd.DataFrame(data=conv_i, columns=["h_i"])
 data_N_tubes = pd.DataFrame(data=N_tubes, columns=["N_t"])
-
-data_HE = pd.concat([data_U,data_DIM, data_N_tubes, data_d_shell, data_V_tubes, data_V_shell, data_conv_o, data_conv_i],
-                    axis=1)
+data_area = pd.DataFrame(data=A, columns=["A"])
+data_pitch = pd.DataFrame(data=N_tubes, columns=["P_t"])
+data_effectiveness = pd.DataFrame(data=N_tubes, columns=["e"])
+data_HE = pd.concat(
+    [data_DIM, data_pitch, data_N_tubes, data_area, data_d_shell, data_V_tubes, data_V_shell, data_conv_o, data_conv_i,
+     data_U, data_effectiveness],
+    axis=1)
 ########################################################################################################################
 filtered_index = []
 for i in range(len(data_HE["d_shell"])):
-    if 1100 < data_HE["U"][i] < 5600 and 0.9 <data_HE["V_tubes"][i]< 2.5 and 0.6 < data_HE["V_shell"][i] < 1.5:
+    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and 0.6 < data_HE["V_shell"][i] < 1.5:
         filtered_index.append(i)
 
 filtered_data = data_HE.loc[filtered_index]
@@ -323,3 +327,9 @@ print(f'Cooling Water Density: rho = {round(rho_c, 2)} [kg/m^3]')
 print(f'Cooling Water Conductivity: k = {round(k_c, 2)} [W/m-k]')
 print(f'Cooling Water viscosity: mu = {round(mu_c, 5)} [kg/m-s]')
 print(f'Cooling Water Prandlt-#: Pr = {round(Pr_c, 2)}')
+
+print(f'Steam Specific Heat: C_p = {round(C_p_h, 2)} [J/kg-K]')
+print(f'Steam Density: rho = {round(rho_h, 2)} [kg/m^3]')
+print(f'Steam Conductivity: k = {round(k_h, 2)} [W/m-k]')
+print(f'Steam viscosity: mu = {round(mu_h, 5)} [kg/m-s]')
+print(f'Steam Prandlt-#: Pr = {round(Pr_h, 2)}')
