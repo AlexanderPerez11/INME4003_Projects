@@ -295,7 +295,6 @@ for array in tube_type_combs:
     count += 1
 
 data_U = pd.DataFrame(data=U, columns=["U"])
-# data_Q = pd.DataFrame(data=Q, columns=["Q"])
 data_DIM = pd.DataFrame(tube_type_combs, columns=["N_pass", "Material", "Tube_dim", "L_t"])
 data_d_shell = pd.DataFrame(data=d_shell, columns=["d_shell"])
 data_V_tubes = pd.DataFrame(data=V_tubes, columns=["V_tubes"])
@@ -313,6 +312,7 @@ for i in range(len(data_HE["d_shell"])):
         filtered_index.append(i)
 
 filtered_data = data_HE.loc[filtered_index]
+filtered_data.to_csv("filtered_HE_Data.csv")
 # ########################################################################################################################
 plt.figure(1)
 plt.scatter([i for i in range(len(filtered_data["U"]))], filtered_data["V_shell"], marker='.', label="shell")
