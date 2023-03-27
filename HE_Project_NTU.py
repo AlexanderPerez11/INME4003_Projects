@@ -195,7 +195,7 @@ Dtermine Required Surface Area estimated with outside tube diameter
 U_o_guess = 1100  # Assumed Overall HT Coefficient [W/m^2-k]
 A_required = Q_req / (U_o_guess * dT_lm)
 
-n_passes = np.array([2,4])  # Array of allowable tube passes
+n_passes = np.array([1, 2, 4, 6, 8])  # Array of allowable tube passes
 # n_passes = [2]
 
 material_k = np.array([237, 401, 25, 92, 60.5])
@@ -209,7 +209,7 @@ tube_size = {
     "d_i_tubes": [0.8 * 0.0254, 1.05 * 0.0254, 1.3 * 0.0254, 1.55 * 0.0254, 1.8 * 0.0254, 2.05 * 0.0254, 2.3 * 0.0254,
                   2.55 * 0.0254, 2.8 * 0.0254]}  # Allowable tube sizes [m]
 tube_index = [i for i in range(len(tube_size["d_o_tubes"]))]
-l_tube = np.linspace(4, 12, 9)
+l_tube = np.linspace(1, 12, 10)
 tube_type_combs = list(itertools.product(n_passes, material_index, tube_index, l_tube))
 
 U = np.zeros((len(tube_type_combs)))
@@ -234,7 +234,8 @@ for array in tube_type_combs:
 
     d_o = tube_size["d_o_tubes"][array[2]]
     d_i = tube_size["d_i_tubes"][array[2]]
-    P_t = 1.5 * d_o
+    P_t = 1.25 * d_o
+    print(P_t)
     k_material = material_dict["Conductivity"][array[1]]
 
     L_t = array[3]
@@ -267,7 +268,7 @@ for array in tube_type_combs:
     g = 9.81
     gamma_c = m_dot_h / (L_t * N_tubes[count])
     # print(rho_l,rho_v,k_l,mu_l,gamma_c)
-    h_o = 0.95 * k_l * (rho_l * (rho_l - rho_v) * 9.81 / (mu_l * gamma_c)) ** (1 / 3)# * (N_r) ** (-1 / 6)
+    h_o = 0.95 * k_l * (rho_l * (rho_l - rho_v) * 9.81 / (mu_l * gamma_c)) ** (1 / 3) * (N_r) ** (-1 / 6)
     # print(h_o)
     # h_o = h_o_calculator(V_shell[count], d_o, P_t, P_t, N_tubes[count], d_e, False)
     print(h_o_calculator(V_shell[count], d_o, P_t, P_t, N_tubes[count], d_e, False), h_o)
@@ -307,14 +308,14 @@ data_L_t = pd.DataFrame(data=L_tubes, columns=["L_t"])
 data_N_p = pd.DataFrame(data=N_p, columns=["N_p"])
 data_names = pd.DataFrame(data=k_names, columns=["Material"])
 data_HE = pd.concat(
-    [data_names ,data_N_p, data_L_t, data_pitch, data_N_tubes, data_d_o, data_d_i, data_area, data_d_shell, data_V_tubes, data_V_shell,
+    [data_N_p, data_L_t, data_pitch, data_N_tubes, data_d_o, data_d_i, data_area, data_d_shell, data_V_tubes, data_V_shell,
      data_conv_o, data_conv_i,
      data_U, data_effectiveness],
     axis=1)
 ########################################################################################################################
 filtered_index = []
 for i in range(len(data_HE["d_shell"])):
-    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and 10 < data_HE["V_shell"][i] < 30 and 1/15 < data_HE["d_shell"][i]/data_HE["L_t"][i] <1/5:  #
+    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and 10 < data_HE["V_shell"][i] < 30 and 1/15 < data_HE["d_shell"][i]/data_HE["L_t"][i] <1/5 :  #
         filtered_index.append(i)
 
 filtered_data = data_HE.loc[filtered_index]
