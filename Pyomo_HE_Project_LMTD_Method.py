@@ -150,7 +150,7 @@ T_h = Steam_in.temperature  # Constant Phase Change Temperature of steam [C]
 
 h_fg_steam = Steam_in.enthalpy - Steam_out.enthalpy  # Vaporization Enthalpy of water [J/kg-K]
 T_c_in = 40  # temperature of cooling water at the inlet [C]
-T_c_out = 65  # temperature of cooling water at the outlet [C]
+T_c_out = 60  # temperature of cooling water at the outlet [C]
 
 m_dot_h = 3900 / 3600  # mass flow rate of steam [kg/s]
 Q_req = m_dot_h * (h_fg_steam)  # Heat needed to condense the steam [W]
@@ -195,7 +195,7 @@ Dtermine Required Surface Area estimated with outside tube diameter
 U_o_guess = 1100  # Assumed Overall HT Coefficient [W/m^2-k]
 A_required = Q_req / (U_o_guess * dT_lm)
 
-n_passes = np.array([2,4])  # Array of allowable tube passes
+n_passes = np.array([2])  # Array of allowable tube passes
 # n_passes = [2]
 
 material_k = np.array([237, 401, 25, 92, 60.5])
@@ -234,7 +234,7 @@ for array in tube_type_combs:
 
     d_o = tube_size["d_o_tubes"][array[2]]
     d_i = tube_size["d_i_tubes"][array[2]]
-    P_t = 1.5 * d_o
+    P_t = 1.25 * d_o
     k_material = material_dict["Conductivity"][array[1]]
 
     L_t = array[3]
@@ -242,7 +242,7 @@ for array in tube_type_combs:
     N_tubes[count] = int(A_required / (d_o * L_t * np.pi))
 
     # Tube Side Velocity
-    V_tubes[count] = m_dot_c / ((N_tubes[count] / N_passes) * (rho_c * 0.25 * np.pi * d_i ** 2))
+    V_tubes[count] = m_dot_c / ((N_tubes[count]) * (rho_c * 0.25 * np.pi * d_i ** 2))
 
     # Calculate Internal Convection coefficient
     h_i = h_i_calculator(V_tubes[count], d_i)
@@ -250,14 +250,15 @@ for array in tube_type_combs:
     # Bundle Diameter
     shell_clearance = 0.039
     D_bundle = bundle_diameter(d_o, N_passes, N_tubes[count])
-    D_shell = D_bundle + shell_clearance
+    D_shell = (D_bundle + shell_clearance)*N_passes
     d_shell[count] = D_shell
     I_baffle = D_shell
     # Cross Flow Area for tube banks
-    A_s = (P_t - d_o) * D_shell * I_baffle / P_t
+    A_s = (D_shell * I_baffle) / 3
+    print(A_s)
     G_shell = m_dot_h / A_s
     V_shell[count] = G_shell / rho_h
-    d_e = 1.10 * (P_t ** 2 - 0.917 * d_o ** 2)
+    d_e = 1.10 / (d_o) * (P_t ** 2 - 0.917 * d_o ** 2)
     N_r = int(2 * N_tubes[count] / 3)
 
     rho_l = Steam_out.density
@@ -267,10 +268,9 @@ for array in tube_type_combs:
     g = 9.81
     gamma_c = m_dot_h / (L_t * N_tubes[count])
     # print(rho_l,rho_v,k_l,mu_l,gamma_c)
-    h_o = 0.95 * k_l * (rho_l * (rho_l - rho_v) * 9.81 / (mu_l * gamma_c)) ** (1 / 3)# * (N_r) ** (-1 / 6)
+    h_o = 0.95 * k_l * (rho_l * (rho_l - rho_v) * 9.81 / (mu_l * gamma_c)) ** (1 / 3) * (N_r) ** (-1 / 6)
     # print(h_o)
     # h_o = h_o_calculator(V_shell[count], d_o, P_t, P_t, N_tubes[count], d_e, False)
-    print(h_o_calculator(V_shell[count], d_o, P_t, P_t, N_tubes[count], d_e, False), h_o)
 
     conv_i[count] = h_i
     conv_o[count] = h_o
@@ -307,14 +307,15 @@ data_L_t = pd.DataFrame(data=L_tubes, columns=["L_t"])
 data_N_p = pd.DataFrame(data=N_p, columns=["N_p"])
 data_names = pd.DataFrame(data=k_names, columns=["Material"])
 data_HE = pd.concat(
-    [data_names ,data_N_p, data_L_t, data_pitch, data_N_tubes, data_d_o, data_d_i, data_area, data_d_shell, data_V_tubes, data_V_shell,
+    [data_names, data_N_p, data_L_t, data_pitch, data_N_tubes, data_d_o, data_d_i, data_area, data_d_shell,
+     data_V_tubes, data_V_shell,
      data_conv_o, data_conv_i,
      data_U, data_effectiveness],
     axis=1)
 ########################################################################################################################
 filtered_index = []
 for i in range(len(data_HE["d_shell"])):
-    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and 10 < data_HE["V_shell"][i] < 30 and 1/15 < data_HE["d_shell"][i]/data_HE["L_t"][i] <1/5:  #
+    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5:  #
         filtered_index.append(i)
 
 filtered_data = data_HE.loc[filtered_index]
