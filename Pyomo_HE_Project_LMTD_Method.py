@@ -250,7 +250,7 @@ for array in tube_type_combs:
     # Bundle Diameter
     shell_clearance = 0.039
     D_bundle = bundle_diameter(d_o, N_passes, N_tubes[count])
-    D_shell = (D_bundle + shell_clearance)*N_passes
+    D_shell = (D_bundle + shell_clearance)
     d_shell[count] = D_shell
     I_baffle = D_shell
     # Cross Flow Area for tube banks
