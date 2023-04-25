@@ -17,7 +17,7 @@ def tempsol(Tco, Thi, Tci, Tho):
 
 T_guess = -5000
 
-T_sol = fsolve(tempsol,T_guess, args=(Thi, Tci, Tho)
+T_sol = 2
 )
 print(T_sol)
 

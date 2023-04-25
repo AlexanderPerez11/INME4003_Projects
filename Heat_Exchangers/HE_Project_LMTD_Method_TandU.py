@@ -22,7 +22,9 @@ Determine a suitable design that specifies:
 (g) Condenser’s effectiveness
 Your design must comply with standard parameters for this type of heat exchanger.
 """
-def drawProgressBar(percent, barLen = 20):
+
+
+def drawProgressBar(percent, barLen=20):
     # percent float from 0 to 1.
     sys.stdout.write("\r")
     sys.stdout.write("[{:<{}}] {:.0f}%".format("=" * int(barLen * percent), barLen, percent * 100))
@@ -30,19 +32,17 @@ def drawProgressBar(percent, barLen = 20):
 
 
 def h_i_calculator(V, D):
-    Re = (rho_c * V * D) / mu_c
+    Re = (rho_c * V * D) / mu_c  # Internal Flow Reynolds Number
     if Re < 2300:
-        Nu = 3.66
-        h = (Nu * k_c) / D
+        Nu = 3.66  # laminar Nusselt for constant temperature cylinder
+        h = (Nu * k_c) / D  # Convection coefficient [W/m^2-K]
         return h
     else:
-        # if T_h > T_m:
         n = 0.4
-        # else:
-        #     n = 0.3
-        Nu = 0.023 * Re ** 0.8 * Pr_c ** n
+        Nu = 0.023 * Re ** 0.8 * Pr_c ** n  # Turbulent Nusselt number
         h = (Nu * k_c) / D
         return h
+
 
 def bundle_diameter(d_o, N_passes, N_tubes):
     K = [0.319, 0.249, 0.175, 0.0743, 0.0365]
@@ -67,15 +67,15 @@ def bundle_diameter(d_o, N_passes, N_tubes):
         K1 = K[4]
         n1 = n[4]
 
-    D_bundle = d_o * (N_tubes / K1) ** (1 / n1)
+    D_bundle = d_o * (N_tubes / K1) ** (1 / n1)  # Bundle Diameter
 
     return D_bundle
 
 
 def calaculate_properties(Tout, Tin):
-    Tm = (Tout + Tin) / 2
+    Tm = (Tout + Tin) / 2  # Mean Temperature
 
-    Tf = (Tm + T_h) / 2
+    Tf = (Tm + T_h) / 2  # Film Temperature
 
     Cooling_Water = Fluid(FluidsList.Water).with_state(Input.temperature(Tm), Input.quality(0))
 
@@ -110,15 +110,13 @@ m_dot_h = 3900 / 3600  # mass flow rate of steam [kg/s]
 Q_req = m_dot_h * (h_fg_steam)  # Heat needed to condense the steam [W]
 
 ########################################################################################################################
+U_o_guess = np.linspace(1100, 5600, 9)  # Assumed Overall HT Coefficient [W/m^2-k]
 
-########################################################################################################################
-U_o_guess = np.linspace(1100, 5600, 9)   # Assumed Overall HT Coefficient [W/m^2-k]
+T_c_out_guess = np.linspace(T_c_in + 25, T_h - 10, 5)  # Outlet Temperature Array [C]
+n_passes = np.array([2, 4, 6])  # Array of allowable tube passes
+n_tubes = np.linspace(20, 200, 19)  # Array of tube numbers
 
-T_c_out_guess = np.linspace(T_c_in + 25, T_h - 10, 5)
-n_passes = np.array([2,4,6])  # Array of allowable tube passes
-n_tubes = np.linspace(20,200,19)
- print(n_tubes)
-material_k = np.array([237, 401, 25, 92, 60.5])
+material_k = np.array([237, 401, 25, 92, 60.5])  # Material conductivity [W/m-K]
 material_name = ["Aluminum", "Copper", "Stainless Steel", "Nickel", "Carbon Steel"]
 material_dict = {"Material": material_name, "Conductivity": material_k}
 material_index = [i for i in range(len(material_name))]
@@ -131,8 +129,13 @@ tube_size = {
                   3.068 * 0.0254,
                   3.548 * 0.0254, 4.029 * 0.0254]}  # Allowable tube sizes [m]
 tube_index = [i for i in range(len(tube_size["d_o_tubes"]))]
-l_tube = np.linspace(4, 8, 4)
-tube_type_combs = list(itertools.product(n_passes, material_index, tube_index, l_tube, U_o_guess, T_c_out_guess, n_tubes))
+l_tube = np.linspace(4, 8, 4)  # Array of allowable tube lengths
+
+# Combinations vector
+tube_type_combs = list(
+    itertools.product(n_passes, material_index, tube_index, l_tube, U_o_guess, T_c_out_guess, n_tubes))
+
+# Arrays for storing data
 combinations = len(tube_type_combs)
 U = np.zeros((len(tube_type_combs)))
 A = np.zeros((len(tube_type_combs)))
@@ -149,7 +152,6 @@ d_inside = np.zeros((len(tube_type_combs)))
 N_p = np.zeros((len(tube_type_combs)))
 L_tubes = np.zeros((len(tube_type_combs)))
 k_names = np.zeros((len(tube_type_combs)))
-
 m_dot_cold = np.zeros((len(tube_type_combs)))
 dT_log_mean = np.zeros((len(tube_type_combs)))
 A_req = np.zeros((len(tube_type_combs)))
@@ -159,6 +161,7 @@ T_c_o_g = np.zeros((len(tube_type_combs)))
 count = 0
 
 for array in tube_type_combs:
+    # Extract Properties
     N_passes = array[0]
 
     d_o = tube_size["d_o_tubes"][array[2]]
@@ -170,9 +173,9 @@ for array in tube_type_combs:
     U_guess = array[4]
     T_c_out = array[5]
 
-    fluid_prop = calaculate_properties(T_c_out,T_c_in)
+    fluid_prop = calaculate_properties(T_c_out, T_c_in)
     C_p_c = fluid_prop[0]
-    C_p_h  = fluid_prop[1]
+    C_p_h = fluid_prop[1]
     rho_c = fluid_prop[2]
     rho_h = fluid_prop[3]
     k_c = fluid_prop[4]
@@ -186,7 +189,6 @@ for array in tube_type_combs:
     dT_lm = (T_h - T_c_in - (T_h - T_c_out)) / np.log((T_h - T_c_in) / (T_h - T_c_out))
     A_required = Q_req / (U_guess * dT_lm)
     # Estimate Number of Tubes
-    # N_tubes[count] = int(A_required / (d_o * L_t * np.pi))
     N_tubes[count] = array[6]
 
     # Tube Side Velocity
@@ -200,14 +202,8 @@ for array in tube_type_combs:
     D_bundle = bundle_diameter(d_o, N_passes, N_tubes[count])
     D_shell = (D_bundle + shell_clearance)
     d_shell[count] = D_shell
-    I_baffle = 1.6*D_shell
-    # Cross Flow Area for tube banks
-    # A_s = (D_shell * I_baffle) / 3
-    # A_s = ((P_t - d_o)*D_shell*I_baffle)/P_t
-    # G_shell = m_dot_h / A_s
-    # print(G_shell, rho_h)
-    V_shell[count] = m_dot_h/(rho_h*D_shell*I_baffle)
-    # d_e = 1.10 / (d_o) * (P_t ** 2 - 0.917 * d_o ** 2)
+    I_baffle = 1.6 * D_shell
+    V_shell[count] = m_dot_h / (rho_h * D_shell * I_baffle)
     N_r = int(2 * N_tubes[count] / 3)
 
     rho_l = Steam_out.density
@@ -240,9 +236,8 @@ for array in tube_type_combs:
     A_req[count] = A_required
     U_o_g[count] = U_guess
     T_c_o_g[count] = T_c_out
-    drawProgressBar((count/combinations))
+    drawProgressBar((count / combinations))
     count += 1
-
 
 data_U = pd.DataFrame(data=U, columns=["U"])
 
@@ -275,11 +270,12 @@ data_HE = pd.concat(
 ########################################################################################################################
 filtered_index = []
 for i in range(len(data_HE["d_shell"])):
-    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and data_HE["e"][i]>=0.6:  #
+    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and data_HE["e"][i] >= 0.6 and 10 < \
+            data_HE["V_shell"][i] < 30 and 1 / 15 < data_HE["D_s"][i] / data_HE["L_t"][i] < 1 / 5:  #
         filtered_index.append(i)
 
 filtered_data = data_HE.loc[filtered_index]
-filtered_data.to_csv("filtered_HE_Data.csv")
+# filtered_data.to_csv("filtered_HE_Data.csv")
 ########################################################################################################################
 plt.figure(1)
 plt.scatter([i for i in range(len(filtered_data["U"]))], filtered_data["V_shell"], marker='.', label="shell")
@@ -327,25 +323,25 @@ plt.legend()
 
 plt.show()
 
-# print(f"Phase Change Water Temperature: T_h = {round(T_h, 2)} [C]")
-# print(f"Vaporization Enthalpy of Water: h_fg = {round(h_fg_steam, 2)} [J/kg-K]")
-# print(f"Inlet Water Temperature: T_h = {round(T_c_in, 2)} [C]")
-# print(f"Selected Outlet Water Temperature: T_h = {round(T_c_out, 2)} [C]")
-# print(f"Steam Mass Flow Rate: m_dot = {round(m_dot_h, 2)} [kg/s]")
-# print(f'Required Heat Rate: Q_req = {round(Q_req, 2)} [W]')
-# print(f"Cooling Water Mass Flow Rate: m_dot = {round(m_dot_c, 2)} [kg/s]")
-# print(f'Cooling Water Specific Heat: C_p = {round(C_p_c, 2)} [J/kg-K]')
-# print(f'Cooling Water Density: rho = {round(rho_c, 2)} [kg/m^3]')
-# print(f'Cooling Water Conductivity: k = {round(k_c, 2)} [W/m-k]')
-# print(f'Cooling Water viscosity: mu = {round(mu_c, 5)} [kg/m-s]')
-# print(f'Cooling Water Prandlt-#: Pr = {round(Pr_c, 2)}')
-#
-# print(f'Steam Specific Heat: C_p = {round(C_p_h, 2)} [J/kg-K]')
-# print(f'Steam Density: rho = {round(rho_h, 2)} [kg/m^3]')
-# print(f'Steam Conductivity: k = {round(k_h, 2)} [W/m-k]')
-# print(f'Steam viscosity: mu = {round(mu_h, 5)} [kg/m-s]')
-# print(f'Steam Prandlt-#: Pr = {round(Pr_h, 2)}')
-#
-# print(f'Log Mean Temperature = {round(dT_lm, 2)} [C]')
-# print(f'Required Heat Rate: Q_req = {round(Q_req, 2)} [W]')
-# print(f'Required Area: A_req = {round(A_required, 2)} [m^2]')
+print(f"Phase Change Water Temperature: T_h = {round(T_h, 2)} [C]")
+print(f"Vaporization Enthalpy of Water: h_fg = {round(h_fg_steam, 2)} [J/kg-K]")
+print(f"Inlet Water Temperature: T_h = {round(T_c_in, 2)} [C]")
+print(f"Selected Outlet Water Temperature: T_h = {round(T_c_out, 2)} [C]")
+print(f"Steam Mass Flow Rate: m_dot = {round(m_dot_h, 2)} [kg/s]")
+print(f'Required Heat Rate: Q_req = {round(Q_req, 2)} [W]')
+print(f"Cooling Water Mass Flow Rate: m_dot = {round(m_dot_c, 2)} [kg/s]")
+print(f'Cooling Water Specific Heat: C_p = {round(C_p_c, 2)} [J/kg-K]')
+print(f'Cooling Water Density: rho = {round(rho_c, 2)} [kg/m^3]')
+print(f'Cooling Water Conductivity: k = {round(k_c, 2)} [W/m-k]')
+print(f'Cooling Water viscosity: mu = {round(mu_c, 5)} [kg/m-s]')
+print(f'Cooling Water Prandlt-#: Pr = {round(Pr_c, 2)}')
+
+print(f'Steam Specific Heat: C_p = {round(C_p_h, 2)} [J/kg-K]')
+print(f'Steam Density: rho = {round(rho_h, 2)} [kg/m^3]')
+print(f'Steam Conductivity: k = {round(k_h, 2)} [W/m-k]')
+print(f'Steam viscosity: mu = {round(mu_h, 5)} [kg/m-s]')
+print(f'Steam Prandlt-#: Pr = {round(Pr_h, 2)}')
+
+print(f'Log Mean Temperature = {round(dT_lm, 2)} [C]')
+print(f'Required Heat Rate: Q_req = {round(Q_req, 2)} [W]')
+print(f'Required Area: A_req = {round(A_required, 2)} [m^2]')

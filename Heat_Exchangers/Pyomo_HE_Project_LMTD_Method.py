@@ -204,12 +204,14 @@ material_dict = {"Material": material_name, "Conductivity": material_k}
 material_index = [i for i in range(len(material_name))]
 
 tube_size = {
-    "d_o_tubes": [1.05 * 0.0254, 1.315 * 0.0254, 1.66 * 0.0254, 1.9 * 0.0254, 2.375 * 0.0254, 2.875 * 0.0254, 3.5 * 0.0254,
+    "d_o_tubes": [1.05 * 0.0254, 1.315 * 0.0254, 1.66 * 0.0254, 1.9 * 0.0254, 2.375 * 0.0254, 2.875 * 0.0254,
+                  3.5 * 0.0254,
                   4 * 0.0254, 3.5 * 0.0254],
-    "d_i_tubes": [0.824 * 0.0254, 1.049 * 0.0254, 1.380 * 0.0254, 1.610 * 0.0254, 2.067 * 0.0254, 2.469 * 0.0254, 3.068 * 0.0254,
+    "d_i_tubes": [0.824 * 0.0254, 1.049 * 0.0254, 1.380 * 0.0254, 1.610 * 0.0254, 2.067 * 0.0254, 2.469 * 0.0254,
+                  3.068 * 0.0254,
                   3.548 * 0.0254, 4.029 * 0.0254]}  # Allowable tube sizes [m]
 tube_index = [i for i in range(len(tube_size["d_o_tubes"]))]
-l_tube = np.linspace(4, 12, 9*9)
+l_tube = np.linspace(4, 12, 9 * 9)
 tube_type_combs = list(itertools.product(n_passes, material_index, tube_index, l_tube))
 
 U = np.zeros((len(tube_type_combs)))
@@ -252,12 +254,12 @@ for array in tube_type_combs:
     D_bundle = bundle_diameter(d_o, N_passes, N_tubes[count])
     D_shell = (D_bundle + shell_clearance)
     d_shell[count] = D_shell
-    I_baffle = 1.5*D_shell
+    I_baffle = 1.5 * D_shell
     # Cross Flow Area for tube banks
     A_s = (D_shell * I_baffle) / 3
     print(A_s)
     G_shell = m_dot_h / A_s
-    V_shell[count] = m_dot_h/ (rho_h*D_shell*I_baffle)
+    V_shell[count] = m_dot_h / (rho_h * D_shell * I_baffle)
     d_e = 1.10 / (d_o) * (P_t ** 2 - 0.917 * d_o ** 2)
     N_r = int(2 * N_tubes[count] / 3)
 
@@ -315,11 +317,12 @@ data_HE = pd.concat(
 ########################################################################################################################
 filtered_index = []
 for i in range(len(data_HE["d_shell"])):
-    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5:  #
+    if 1100 < data_HE["U"][i] < 5600 and 0.9 < data_HE["V_tubes"][i] < 2.5 and 10 <
+            data_HE[“V_shell”][i] < 30 and 1 / 15 < data_HE[“D_s”][i]/data_HE[“L_t”][i] < 1 / 5:  #
         filtered_index.append(i)
 
 filtered_data = data_HE.loc[filtered_index]
-filtered_data.to_csv("filtered_HE_Data_OG.csv")
+# filtered_data.to_csv("filtered_HE_Data_OG.csv")
 ########################################################################################################################
 plt.figure(1)
 plt.scatter([i for i in range(len(filtered_data["U"]))], filtered_data["V_shell"], marker='.', label="shell")
