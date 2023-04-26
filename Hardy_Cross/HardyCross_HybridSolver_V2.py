@@ -70,7 +70,6 @@ def solve_hybrid_pipes(Q_loops, K_loops, loop_idexes,tol=1e-7, max_iter=100):
     return Q_loops_old, dQ, residuals
 
 print("""This program can solve a hybrid piping system with n symetrical loops\n""")
-
 n = float(input("Enter a value for n: "))
 C = float(input("Enter a value for constant C: "))
 k1 = float(input("Enter a value for constant k1: "))
