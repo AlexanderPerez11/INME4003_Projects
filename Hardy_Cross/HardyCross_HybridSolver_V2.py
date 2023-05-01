@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from copy import deepcopy
+import pandas as pd
 
 def find_shared_indexes(arr):
     shared_indexes = []
@@ -206,17 +207,40 @@ while run:
         Q_solution, dQ, Residuals = solve_hybrid_pipes(Q_loops, K_loops, loop_idexes)
 
         count = 0
+        df_q_loops = []
+        dat_dq = []
+        dat_dq_names = []
+        df_q_loops_indexes = []
         print("""
-    ########################################################################################################################
-    Volumetric Flowrates:
+########################################################################################################################
+Volumetric Flowrates:
         """)
         for i in range(len(loop_idexes)):
-
+            dat_dq.append(dQ[i])
+            dat_dq_names.append(f"dQ{i + 1}")
             for j in range(len(loop_idexes[0])):
+                df_q_loops.append(Q_solution[i][j])
+                df_q_loops_indexes.append(loop_idexes[i][j] + 1)
                 print(f"Q{int(loop_idexes[i][j] + 1)} = {round(Q_solution[i][j], 3)}")
 
-        print("""
-        #######################################################################################################################
+        dat = pd.DataFrame(df_q_loops, index=df_q_loops_indexes, columns=["Q[cfs]"])
+        file_name_res = file_name.split(".", 1)[0]
+        name_1 = file_name_res + "_results.csv"
+        dat.to_csv(name_1)
+        print(f"""
+#######################################################################################################################
+dQ values for each loop:
+                """)
+
+        for i in range(len(dat_dq)):
+            print(f"Q{dat_dq_names[i]} = {dat_dq[i]}")
+
+        dat2 = pd.DataFrame(dat_dq,index=dat_dq_names)
+        name_2 = file_name_res + "_residuals.csv"
+        dat2.to_csv(name_2)
+        print(f"""
+The residuals have been saved to a save file named {file_name_res}_residuals.csv
+#######################################################################################################################
         """)
         a = input("Run again? (y/n): ")
         if a == "y":

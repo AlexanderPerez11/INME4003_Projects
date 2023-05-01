@@ -1,5 +1,7 @@
 import numpy as np
 from copy import deepcopy
+import pandas as pd
+
 
 def find_shared_indexes(arr):
     shared_indexes = []
@@ -110,3 +112,22 @@ copy_loop_idexes = deepcopy(loop_idexes)
 Q_loops = flip_repeated_values(copy_loop_idexes,  Q_loops)
 Q_solution, dQ, Residuals = solve_hybrid_pipes(Q_loops, K_loops, loop_idexes)
 print(Q_solution)
+
+df_q_loops = []
+dat_dq = []
+dat_dq_names = []
+df_q_loops_indexes = []
+
+for i in range(len(loop_idexes)):
+    dat_dq.append(dQ[i])
+    dat_dq_names.append(f"dQ{i+1}")
+    for j in range(len(loop_idexes[0])):
+        df_q_loops.append(Q_solution[i][j])
+        df_q_loops_indexes.append(loop_idexes[i][j] + 1)
+        print(f"Q{int(loop_idexes[i][j] + 1)} = {round(Q_solution[i][j], 3)}")
+
+dat = pd.DataFrame(df_q_loops, index=df_q_loops_indexes, columns=["Q[cfs]"])
+
+for i in range(len(dat_dq)):
+    print(f"Q{dat_dq_names[i]} = {dat_dq[i]}")
+
